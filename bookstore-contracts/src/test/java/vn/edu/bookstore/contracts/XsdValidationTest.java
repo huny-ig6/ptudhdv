@@ -35,7 +35,6 @@ class XsdValidationTest {
         assertThat(XmlContracts.validate(sample("order-valid.xml"))).isEmpty();
     }
 
-    // TODO(TH1-3): bỏ @Disabled sau khi hoàn thành TH1-2; thêm ca kiểm chứng cho đơn hàng sai trạng thái
     //@org.junit.jupiter.api.Disabled("TODO(TH1-3)")
     @ParameterizedTest
     @ValueSource(strings = {

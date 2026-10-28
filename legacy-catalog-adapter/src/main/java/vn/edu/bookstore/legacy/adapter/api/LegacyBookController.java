@@ -1,6 +1,7 @@
 package vn.edu.bookstore.legacy.adapter.api;
 
 import java.util.List;
+import java.util.regex.Pattern;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,6 +14,9 @@ import vn.edu.bookstore.legacy.adapter.soap.LegacyCatalogClient;
 @RequestMapping("/api/v1/legacy/books")
 public class LegacyBookController {
 
+    private static final Pattern ISBN_PATTERN =
+            Pattern.compile("^97[89][0-9]{10}$");
+
     private final LegacyCatalogClient client;
 
     public LegacyBookController(LegacyCatalogClient client) {
@@ -21,15 +25,32 @@ public class LegacyBookController {
 
     @GetMapping("/{isbn}")
     public BookView getBook(@PathVariable String isbn) {
-        // TODO(TH1-6): kiểm tra isbn khớp ^97[89][0-9]{10}$ (sai → InvalidRequestException),
-        //              gọi client.getBook(isbn) rồi BookView.from(...)
-        throw new UnsupportedOperationException("TODO(TH1-6)");
+        if (!ISBN_PATTERN.matcher(isbn).matches()) {
+            throw new InvalidRequestException(
+                    "ISBN không hợp lệ; ISBN phải gồm 13 chữ số và bắt đầu bằng 978 hoặc 979");
+        }
+
+        return BookView.from(client.getBook(isbn));
     }
 
     @GetMapping
-    public List<BookView> search(@RequestParam("q") String keyword,
-                                 @RequestParam(name = "limit", defaultValue = "10") int limit) {
-        // TODO(TH1-6): q ít nhất 2 ký tự, limit 1..50; gọi client.search(...)
-        throw new UnsupportedOperationException("TODO(TH1-6)");
+    public List<BookView> search(
+            @RequestParam("q") String keyword,
+            @RequestParam(name = "limit", defaultValue = "10") int limit) {
+
+        if (keyword == null || keyword.trim().length() < 2) {
+            throw new InvalidRequestException(
+                    "Từ khóa tìm kiếm phải có ít nhất 2 ký tự");
+        }
+
+        if (limit < 1 || limit > 50) {
+            throw new InvalidRequestException(
+                    "limit phải nằm trong khoảng từ 1 đến 50");
+        }
+
+        return client.search(keyword.trim(), limit)
+                .stream()
+                .map(BookView::from)
+                .toList();
     }
 }
